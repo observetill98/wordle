@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Word Ranker</title>
+  <script>
+    async function findBestWord() {
+      const input = document.getElementById("words").value;
+      if (!input.trim()) {
+        alert("Add one or more words as arguments (e.g. uraei thyme...)");
+        return;
+      }
+
+      const givenWords = input.trim().split(/\s+/);
+
+      try {
+        const response = await fetch('valid.txt');
+        const text = await response.text();
+        const words = text.split('\n');
+
+        const letterOrder = 'etaoinshrdlucmfywgpbvkxqjz';
+        const givenLetters = new Set(givenWords.join(""));
+        const remainingLetters = new Set(letterOrder.split('').filter(l => !givenLetters.has(l)));
+
+        let bestWord = null;
+        let bestRank = -1;
+
+        for (const word of words) {
+          const wordSet = new Set(word);
+
+          // skip words sharing letters with given words
+          const intersects = [...wordSet].some(l => givenLetters.has(l));
+          if (intersects) continue;
+
+          // rank
+          let rank = 0;
+          for (const letter of wordSet) {
+            const idx = letterOrder.indexOf(letter);
+            if (idx >= 0) {
+              rank += letterOrder.length - idx;
+            }
+          }
+          console.log(word, rank);
+
+          if (rank > bestRank) {
+            bestWord = word;
+            bestRank = rank;
+          }
+        }
+
+        document.getElementById("result").textContent = `final verdict: ${bestWord}, ${bestRank}`;
+
+      } catch (err) {
+        console.error(err);
+        alert("Could not load valid.txt");
+      }
+    }
+  </script>
+</head>
+<body>
+  <p>It's better to input words that already don't have repeating letters (inside them and among eachother)</h1>
+  <input id="words" type="text" placeholder="Enter words separated by space"/>
+  <button onclick="findBestWord()">Find</button>
+  <p id="result"></p>
+</body>
+</html>
